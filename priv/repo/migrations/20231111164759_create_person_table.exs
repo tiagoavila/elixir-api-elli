@@ -10,8 +10,6 @@ defmodule RinhaBackend.Repo.Migrations.CreatePersonTable do
       add :stack, :text
     end
 
-    create index(:person, [:apelido], name: "idx_apelido_unico", unique: true)
-
     execute """
     CREATE INDEX person_fts_idx
     ON person

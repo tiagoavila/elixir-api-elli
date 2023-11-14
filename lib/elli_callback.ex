@@ -1,13 +1,15 @@
 defmodule ElixirApiElli.ElliCallback do
   @behaviour :elli_handler
 
+  alias RinhaBackend.Person
+
   def handle(req, _args) do
     do_handle(:elli_request.method(req), :elli_request.path(req), req)
   end
 
   defp do_handle(:GET, [], _req), do: {:ok, "Welcome!"}
 
-  defp do_handle(:POST, ["pessoas"], req), do: {:ok, :elli_request.body(req)}
+  defp do_handle(:POST, ["pessoas"], req), do: {:ok, :elli_request.body(req) |> Person.insert()}
   defp do_handle(:GET, ["pessoas", id], _req), do: {:ok, id}
   defp do_handle(:GET, ["pessoas"], req) do
     [{"t", search_term}] = :elli_request.get_args(req)

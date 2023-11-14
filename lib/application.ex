@@ -16,7 +16,8 @@ defmodule ElixirApiElli.Application do
         id: :elli,
         start: {:elli, :start_link, [ [ callback: ElliCallback, port: 3000 ]]}
       },
-      RinhaBackend.Repo
+      RinhaBackend.EtsCache,
+      RinhaBackend.Repo,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
