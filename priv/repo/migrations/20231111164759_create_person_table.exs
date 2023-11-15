@@ -6,7 +6,7 @@ defmodule RinhaBackend.Repo.Migrations.CreatePersonTable do
       add :id, :uuid, primary_key: true
       add :apelido, :string, size: 32
       add :nome, :string, size: 100
-      add :nascimento, :integer
+      add :nascimento, :string
       add :stack, :text
     end
 

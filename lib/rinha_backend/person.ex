@@ -1,6 +1,9 @@
 defmodule RinhaBackend.Person do
   use Ecto.Schema
 
+  alias RinhaBackend.EtsCache
+
+  @primary_key {:id, Ecto.UUID, autogenerate: true}
   schema "person" do
     field :apelido, :string
     field :nome, :string
@@ -10,21 +13,40 @@ defmodule RinhaBackend.Person do
 
   def insert(person_body) do
     person = Jason.decode!(person_body, keys: :atoms)
-    IO.inspect(person.apelido)
 
     if validate(person) do
-      %RinhaBackend.Person{
+      insert_person_result = %RinhaBackend.Person{
         apelido: person.apelido,
         nome: person.nome,
         nascimento: person.nascimento,
         stack: parse_stack_to_string(person.stack)}
-      |> RinhaBackend.Repo.insert
+      |> RinhaBackend.Repo.insert()
+
+      case insert_person_result do
+        {:ok, created_person} ->
+          EtsCache.insert(created_person.apelido)
+
+          person_json = Map.put(person, :id, created_person.id) |> Jason.encode!()
+          EtsCache.insert(created_person.id, person_json)
+
+          {:ok, created_person}
+
+        {:error, %Ecto.Changeset{} = _changeset} -> {:error, "changeset error"}
+      end
+
     else
-      "nickname_does_not_exist"
+      {:error, "invalid data"}
     end
   end
 
-  def validate(person) do
+  def read(id) do
+    case EtsCache.read(id) do
+      [{_id, person}] -> {:ok, [{"Content-Type", "application/json"}], person}
+      [] -> {404, [], "not found"}
+    end
+  end
+
+  defp validate(person) do
     with true <- validate_nickname(person.apelido),
          true <- check_nickname_is_unique(person.apelido),
          true <- validate_name(person.nome),
@@ -41,11 +63,11 @@ defmodule RinhaBackend.Person do
   defp validate_nickname(nickname) when is_binary(nickname), do: if String.length(nickname) <= 32, do: true, else: false
   defp validate_nickname(_), do: false
 
-  defp check_nickname_is_unique(nickname), do: if RinhaBackend.EtsCache.exists?(nickname), do: false, else: true
+  defp check_nickname_is_unique(nickname), do: if EtsCache.exists?(nickname), do: false, else: true
 
   defp validate_name(nil), do: false
-  defp validate_name(name) when is_binary(nickname), do: if String.length(nickname) <= 100, do: true, else: false
-  defp validate_nickname(_), do: false
+  defp validate_name(name) when is_binary(name), do: if String.length(name) <= 100, do: true, else: false
+  defp validate_name(_), do: false
 
   defp validate_birth_date(nil), do: false
   defp validate_birth_date(_), do: true

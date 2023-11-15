@@ -17,7 +17,10 @@ defmodule RinhaBackend.EtsCache do
     {:ok, nil}
   end
 
-  def insert(nickname, person), do: :ets.insert(@table_name, {nickname, person})
+  def insert(nickname), do: :ets.insert(@table_name, {nickname, nickname})
+  def insert(id, person), do: :ets.insert(@table_name, {id, person})
 
   def exists?(nickname), do: :ets.member(@table_name, nickname)
+
+  def read(id), do: :ets.lookup(@table_name, id)
 end
