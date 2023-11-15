@@ -39,13 +39,6 @@ defmodule RinhaBackend.Person do
     end
   end
 
-  def read(id) do
-    case EtsCache.read(id) do
-      [{_id, person}] -> {:ok, [{"Content-Type", "application/json"}], person}
-      [] -> {404, [], "not found"}
-    end
-  end
-
   defp validate(person) do
     with true <- validate_nickname(person.apelido),
          true <- check_nickname_is_unique(person.apelido),
