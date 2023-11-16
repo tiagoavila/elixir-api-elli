@@ -19,11 +19,11 @@ defmodule ElixirApiElli.ElliCallback do
   defp do_handle(:GET, ["pessoas", id], _req), do: read(id)
 
   defp do_handle(:GET, ["pessoas"], req) do
-    [{"t", search_term}] = :elli_request.get_args(req)
-    {:ok, search_term}
+    :elli_request.get_args(req)
+    |> search_by_term()
   end
 
-  defp do_handle(:GET, ["contagem-pessoas"], _req), do: {:ok, "COntagem"}
+  defp do_handle(:GET, ["contagem-pessoas"], _req), do: {:ok, [], Person.count() |> Integer.to_string()}
 
   def handle_event(_event, _data, _args), do: :ok
 
@@ -36,4 +36,7 @@ defmodule ElixirApiElli.ElliCallback do
       [] -> {404, [], "not found"}
     end
   end
+
+  defp search_by_term([{"t", search_term}]), do: {:ok, [{"Content-Type", "application/json"}], Person.search(search_term) |> Jason.encode!()}
+  defp search_by_term(_), do: {400, "invalid search term"}
 end

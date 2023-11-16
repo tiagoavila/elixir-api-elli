@@ -39,6 +39,29 @@ defmodule RinhaBackend.Person do
     end
   end
 
+  @spec count() :: integer()
+  def count() do
+    RinhaBackend.Repo.aggregate(RinhaBackend.Person, :count, :id)
+  end
+
+  def search(search_term) do
+    {:ok, result} = RinhaBackend.Repo.query(
+      "select id::varchar, apelido, nome, nascimento, stack from person where (apelido || ' ' || nome || ' ' || stack) ilike $1 limit 50",
+      ["%#{search_term}%"]
+    )
+
+    Enum.map(result.rows, fn
+      [id, apelido, nome, nascimento, stack] ->
+        %{
+          id: id,
+          apelido: apelido,
+          nome: nome,
+          nascimento: nascimento,
+          stack: parse_stack_to_list(stack)
+        }
+    end)
+  end
+
   defp validate(person) do
     with true <- validate_nickname(person.apelido),
          true <- check_nickname_is_unique(person.apelido),
@@ -70,4 +93,7 @@ defmodule RinhaBackend.Person do
 
   defp parse_stack_to_string(nil), do: ""
   defp parse_stack_to_string(stack), do: Enum.join(stack, " ")
+
+  defp parse_stack_to_list(""), do: []
+  defp parse_stack_to_list(stack), do: String.split(stack, " ")
 end
